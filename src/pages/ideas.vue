@@ -1,11 +1,10 @@
 <!-- pages/ideas/index.vue -->
 <script setup lang="ts">
-import {ref, onMounted} from 'vue';
+import {onMounted, ref} from 'vue';
 import {useRouter} from 'vue-router';
 import CustomButton from '~/src/components/CustomButton.vue';
 import {useAuthStore} from '~/src/store/auth';
 import 'vue-select/dist/vue-select.css';
-import vSelect from 'vue-select'; //it is needed for tags
 import SplashScreen from "~/src/components/SplashScreen.vue";
 
 interface Idea {
@@ -121,8 +120,7 @@ async function createNewIdea() {
     if (response.ok) {
       // Idea created successfully
       toggleModal();
-      const createdIdea = await response.json();
-      newlyCreatedIdea.value = createdIdea;
+      newlyCreatedIdea.value = await response.json();
       showSplashScreen.value = true;
       await fetchIdeas();
       newIdea.value = {

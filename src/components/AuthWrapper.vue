@@ -26,7 +26,7 @@
   background-color: var(--background-color-05);
   border: 2px dashed var(--pencil-line-color);
   border-radius: 10px;
-  box-shadow: 0px 0px 10px var(--shadow-color);
+  box-shadow: 0 0 10px var(--shadow-color);
 }
 
 .auth-box {

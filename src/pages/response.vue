@@ -11,7 +11,6 @@
 <script setup>
 import {computed, onMounted, ref} from 'vue'
 import {useRoute} from 'vue-router'
-import DOMPurify from 'dompurify';
 
 const route = useRoute()
 const responseData = ref('')

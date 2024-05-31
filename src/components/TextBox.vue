@@ -137,7 +137,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   border: 1px solid #ccc;
   border-radius: 5px;
   background-color: #f9f9f9;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
   box-sizing: border-box;
   overflow: hidden;
   transition: all 0.2s ease-in-out;
