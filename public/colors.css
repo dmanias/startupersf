@@ -1,0 +1,25 @@
+/*:root {*/
+/*    --background-color: #EAEAEA; !* Light Grey *!*/
+/*    --pencil-line-color: #4A4A4A; !* Dark Grey *!*/
+/*    --light-bulb-color: #F2C94C; !* Yellow *!*/
+/*    --book-color: #56CCF2; !* Light Blue *!*/
+/*    --gear-color: #6FCF97; !* Light Green *!*/
+/*    --earthy-tone: #cd8650; !* Earthy brown tone *!*/
+/*}*/
+:root {
+    --background-color: #716b6b; /* Off-white background color */
+    --building-color: #E0E0E0; /* Light grey color for buildings */
+    --shadow-color: #BDBDBD; /* Slightly darker grey for shadows */
+    --window-color: #90A4AE; /* Bluish-grey color for windows */
+    --tree-color: #8BC34A; /* Light green color for trees */
+    --people-color: #795548; /* Brown color for people */
+    --accent-color: #FF9800; /* Orange accent color */
+    --sky-color: #E1F5FE; /* Light blue color for the sky */
+    --pencil-line-color: #3e3c3c; /* Dark Grey */
+    --building-color-opa: rgba(224, 224, 224, 0.6);
+    --shadow-color-07: rgba(189, 189, 189, 0.7); /* Slightly darker grey for shadows with opacity */
+    --background-color-05: rgba(230, 230, 230, 0.5); /* Off-white background color with opacity */
+    --background-color-08: rgb(255, 255, 255, 0.8); /* Off-white background color with opacity */
+    --background-color-09: rgba(245, 245, 245, 0.9); /* Off-white background color with opacity */
+    --grey-input: rgba(168, 177, 192, 0.7);  /* Light grey color for input fields */
+}
