@@ -25,7 +25,7 @@ function handleSwitchToLogin() {
 </script>
 
 <template>
-  <div class="background">
+  <div class="background" v-if="!isLoggedIn && (!showRegisterForm || showRegisterForm)">
     <img src="~/public/sprite2.png" alt="Logo" class="logo" />
     <div class="container">
       <div class="content">
