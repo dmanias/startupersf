@@ -14,6 +14,7 @@
 
 <script setup lang="ts">
 import CustomButton from "~/src/components/CustomButton.vue";
+import type {Idea} from '~/src/types/types.vue';
 
 const props = defineProps<{
   showSplashScreen: boolean;

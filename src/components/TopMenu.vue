@@ -13,11 +13,34 @@ function logout() {
 function toggleLogoutMenu() {
   showLogoutMenu.value = !showLogoutMenu.value;
 }
+
+function closeLogoutMenu(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  const logoutWrapper = document.querySelector('.logout-wrapper');
+  const usernameWrapper = document.querySelector('.username-wrapper');
+
+  if (
+      logoutWrapper &&
+      usernameWrapper &&
+      !logoutWrapper.contains(target) &&
+      !usernameWrapper.contains(target)
+  ) {
+    showLogoutMenu.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeLogoutMenu);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeLogoutMenu);
+});
 </script>
 
 <template>
   <nav>
-    <nuxt-link class="home-link" to="/">Home</nuxt-link>
+    <nuxt-link class="home-link" to="/ideas">Home</nuxt-link>
     <div class="logout-menu" v-if="authStore.token">
       <div class="username-wrapper" @click="toggleLogoutMenu">
         <span class="username">{{ username }}</span>
@@ -79,7 +102,7 @@ nav {
 
 button {
   background-color: var(--pencil-line-color);
-  color: var(--background-color);
+  color: var(--shadow-color);
   border: none;
   padding: 0.5em 1em;
   cursor: pointer;
@@ -87,6 +110,6 @@ button {
 }
 
 button:hover {
-  background-color: var(--tree-color);
+  background-color: var(--background-color);
 }
 </style>

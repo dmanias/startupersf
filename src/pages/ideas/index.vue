@@ -6,17 +6,15 @@ import CustomButton from '~/src/components/CustomButton.vue';
 import {useAuthStore} from '~/src/store/auth';
 import 'vue-select/dist/vue-select.css';
 import SplashScreen from "~/src/components/SplashScreen.vue";
+import type {Idea} from '~/src/types/types.vue';
+import ActionMenu from "~/src/components/ActionMenu.vue";
+import ConfirmationAlert from "~/src/components/ConfirmationAlert.vue";
+import SuccessAlert from "~/src/components/SuccessAlert.vue";
+import vSelect from 'vue-select'; //it is needed for tags do not delete it
 
-interface Idea {
-  id: string;
-  title: string;
-  description: string;
-  tags: string[];
-  privacy: string;
-  inspiration: string;
-  avatarURL: string;
-  // Add other properties as needed
-}
+const showSuccessAlert = ref(false);
+const showDeleteConfirmation = ref(false);
+const ideaToDelete = ref<string | null>(null);
 const isLoading = ref(false);
 const showSplashScreen = ref(false);
 const newlyCreatedIdea = ref<Idea | null>(null);
@@ -25,7 +23,9 @@ const router = useRouter();
 const ideas = ref<Idea[]>([]);
 const config = useRuntimeConfig();
 const backUrl = config.public.BACKEND_URL;
-
+const showOptionalInputs = ref(false);
+const showActionMenu = ref('');
+const existingTags = ref<string[]>([]);
 const showModal = ref(false);
 const newIdea = ref({
   title: '',
@@ -34,7 +34,6 @@ const newIdea = ref({
   privacy: 'public',
   inspiration: '',
 });
-const showOptionalInputs = ref(false);
 
 async function fetchIdeas() {
   try {
@@ -44,7 +43,7 @@ async function fetchIdeas() {
     // Check if the token exists
     if (!token) {
       // If not, redirect to the login page
-      router.push('/');
+      await router.push('/');
       return;
     }
 
@@ -54,7 +53,7 @@ async function fetchIdeas() {
       Authorization: `Bearer ${token}`,
     };
 
-    const response = await fetch(`${backUrl}/${authStore.user_id}/ideas`, {headers});
+    const response = await fetch(`${backUrl}/${authStore.user_id}/ideas?order=date_created:desc`, {headers});
     if (response.ok) {
       const data = await response.json();
       ideas.value = data.items;
@@ -78,8 +77,6 @@ function handleTagInput(selectedTags: string[]) {
   newIdea.value.tags = selectedTags;
 }
 
-const existingTags = ref<string[]>([]);
-
 function handleTagSearch(newTag: string) {
   if (!existingTags.value.includes(newTag)) {
     existingTags.value = [...existingTags.value, newTag];
@@ -92,7 +89,6 @@ function toggleModal() {
 function toggleOptionalInputs() {
   showOptionalInputs.value = !showOptionalInputs.value;
 }
-
 
 async function createNewIdea() {
   try {
@@ -144,6 +140,79 @@ async function createNewIdea() {
 onMounted(() => {
   fetchIdeas();
 });
+
+function closeSuccessAlert() {
+  showSuccessAlert.value = false;
+}
+
+async function deleteIdea(ideaId: string) {
+  try {
+    const token = authStore.token;
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+
+    const response = await fetch(`${backUrl}/ideas/${ideaId}`, {
+      method: 'DELETE',
+      headers,
+    });
+
+    if (response.ok) {
+      // Idea deleted successfully
+      await fetchIdeas();
+    } else {
+      console.error('HTTP error', response.status);
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+  }
+}
+
+function openDeleteConfirmation(ideaId: string) {
+  ideaToDelete.value = ideaId;
+  showDeleteConfirmation.value = true;
+}
+
+function closeDeleteConfirmation() {
+  ideaToDelete.value = null;
+  showDeleteConfirmation.value = false;
+}
+
+async function confirmDelete() {
+  if (ideaToDelete.value) {
+    await deleteIdea(ideaToDelete.value);
+    closeDeleteConfirmation();
+    showSuccessAlert.value = true; // Set showSuccessAlert to true after successful deletion
+  }
+}
+
+function toggleActionMenu(ideaId: string) {
+  showActionMenu.value = showActionMenu.value === ideaId ? '' : ideaId;
+}
+
+function closeActionMenu(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  const actionMenu = document.querySelector('.action-menu');
+  const actionDots = document.querySelector('.action-dots');
+
+  if (
+      actionMenu &&
+      actionDots &&
+      !actionMenu.contains(target) &&
+      !actionDots.contains(target)
+  ) {
+    showActionMenu.value = '';
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', closeActionMenu);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeActionMenu);
+});
 </script>
 
 <template>
@@ -159,6 +228,13 @@ onMounted(() => {
             <img v-if="idea.avatarURL" :src="'data:image/jpeg;base64,' + idea.avatarURL" alt="Avatar" class="idea-avatar" />
             <div v-else class="idea-avatar-placeholder"></div>
             <span class="idea-name">{{ idea.title }}</span>
+            <div class="idea-actions">
+              <div class="action-dots" @click="toggleActionMenu(idea.id)">&#8942;</div>
+              <div v-if="showActionMenu === idea.id">
+                <ActionMenu :idea-id="idea.id" @show-idea="$router.push(`/ideas/${idea.id}`)" @open-delete-confirmation="openDeleteConfirmation" />
+              </div>
+            </div>
+            <p class="idea-date">Created on: {{ new Date(idea.dateCreated).toLocaleDateString() }}</p>
           </div>
         </div>
       </div>
@@ -225,10 +301,48 @@ onMounted(() => {
         @close="showSplashScreen = false"
         class="splash-screen-container"
     ></SplashScreen>
+    <ConfirmationAlert
+        v-if="showDeleteConfirmation"
+        message="Are you gonna kill this idea?"
+        @confirm="confirmDelete"
+        @cancel="closeDeleteConfirmation"
+    />
+    <SuccessAlert v-if="showSuccessAlert" message="Murdered :)" @close="closeSuccessAlert" />
   </div>
 </template>
 
 <style scoped>
+.idea-date {
+  font-size: 0.8em;
+  color: gray;
+}
+
+.delete-confirmation-modal h3 {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--shadow-color);
+  margin-bottom: 20px;
+}
+
+.idea-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding: 10px;
+  border-bottom: 2px dashed var(--shadow-color);
+}
+
+.idea-actions {
+  position: relative;
+}
+
+.action-dots {
+  cursor: pointer;
+  font-size: 24px;
+  color: var(--shadow-color);
+}
+
 .splash-screen-container {
   position: fixed;
   top: 0;
@@ -240,20 +354,6 @@ onMounted(() => {
   align-items: center;
   z-index: 9999;
 }
-
-/*
-.tags-select .vs__dropdown-menu {
-  background-color: var(--pencil-line-color);
-}
-
-.tags-select .vs__dropdown-option {
-  color: var(--background-color)!important;
-}
-
-.tags-select .vs__dropdown-option--highlight {
-  background-color: var(--shadow-color)!important;
-  color: var(--pencil-line-color)!important;
-}*/
 
 .loading-overlay {
   position: fixed;

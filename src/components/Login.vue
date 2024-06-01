@@ -47,9 +47,6 @@ function switchToRegister() {
 <template>
   <AuthWrapper>
     <h2 class="auth-title">Welcome</h2>
-<!--    <div class="logo-container">-->
-<!--      <img src="~/public/sprite2.png" alt="Logo" class="logo" />-->
-<!--    </div>-->
     <UForm :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
       <UFormGroup name="email" class="form-group">
         <template #label>
@@ -90,16 +87,7 @@ function switchToRegister() {
   color: var(--pencil-line-color);
   text-align: center
 }
-/*
-.logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-.logo {
-  margin-bottom: 20px;
-  width: 100px;
-}*/
+
 .auth-form {
   display: flex;
   flex-direction: column;
