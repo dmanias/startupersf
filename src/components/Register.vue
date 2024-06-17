@@ -6,8 +6,9 @@ import { ref, reactive, defineEmits } from 'vue';
 import CustomButton from "~/src/components/CustomButton.vue";
 import AuthWrapper from './AuthWrapper.vue';
 
-const emit = defineEmits(['switchToLogin']);
-
+const emit = defineEmits(['switchToLogin', 'registration-error']);
+const router = useRouter();
+const registrationSuccessful = ref(false);
 const schema = object({
   name: string().required('Required'),
   email: string().email('Invalid email').required('Required'),
@@ -53,7 +54,12 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
     if (!response.ok) {
       console.error('HTTP error', response.status);
       showAlert.value = true;
-      alertMessage.value = `Registration failed: ${response.statusText}`;
+      const errorData = await response.json();
+      registrationSuccessful.value = false;
+      alertMessage.value = `Registration failed: ${errorData.error || response.statusText}`;
+      setTimeout(() => {
+        router.push('/');
+      }, 2000);
     } else {
       const data = await response.json();
       console.log(data);
@@ -66,12 +72,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         showAlert.value = true;
         alertMessage.value = 'Registration successful!';
       }
+      registrationSuccessful.value = true;
     }
   } catch (error) {
     console.error('Fetch error:', error);
     showAlert.value = true;
     alertMessage.value = 'Registration failed: Fetch error';
+    emit('registration-error');
   }
+}
+
+function redirectToRegistration() {
+  console.log('Redirecting to login...');
+  emit('switchToLogin');
 }
 
 function togglePasswordVisibility() {
@@ -90,9 +103,7 @@ function switchToLogin() {
 <template>
   <AuthWrapper>
     <h2 class="auth-title">Register</h2>
-<!--    <div class="logo-container">-->
-<!--      <img src="~/public/sprite2.png" alt="Logo" class="logo" />-->
-<!--    </div>-->
+    <div v-if="!showAlert">
     <UForm :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
       <UFormGroup name="name" class="form-group">
         <label class="block font-medium text-custom-label">Name</label>
@@ -129,6 +140,15 @@ function switchToLogin() {
       </div>
     </UForm>
     <UAlert v-if="showAlert" :description="alertMessage" title="Registration" />
+    </div>
+    <div v-else>
+      <span :class="{ 'error-message': !registrationSuccessful, 'success-message': registrationSuccessful }">
+        {{ alertMessage }}
+      </span>
+      <p class="redirect-text text-center" @click="redirectToRegistration">
+        {{ registrationSuccessful ? 'Back to Login' : 'Back to Register' }}
+      </p>
+    </div>
   </AuthWrapper>
 </template>
 
@@ -140,17 +160,7 @@ function switchToLogin() {
   color: var(--pencil-line-color);
   text-align: center
 }
-/*
-.logo-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
 
-.logo {
-  margin-bottom: 20px;
-  width: 100px;
-}*/
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -189,5 +199,35 @@ function switchToLogin() {
   margin-top: 20px;
   color: var(--pencil-line-color);
   font-weight: bold;
+}
+
+.error-message {
+  color: red;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.success-message {
+  color: green;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.redirect-text {
+  margin-top: 10px;
+  color: var(--pencil-line-color);
+  text-decoration: underline wavy;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 18px;
+  transition: color 0.3s ease;
+}
+
+.redirect-text:hover {
+  color: var(--tree-color);
+}
+
+.text-center {
+  text-align: center;
 }
 </style>

@@ -4,7 +4,7 @@
     <div class="splash-content">
       <h2>{{ newlyCreatedIdea?.title }}</h2>
       <div class="splash-avatar-container">
-        <img v-if="newlyCreatedIdea && newlyCreatedIdea.avatarURL" :src="'data:image/jpeg;base64,' + newlyCreatedIdea.avatarURL" alt="Avatar" class="splash-avatar" />
+        <img v-if="newlyCreatedIdea && newlyCreatedIdea.avatarURL" :src="newlyCreatedIdea.avatarURL" alt="Avatar" class="splash-avatar" />
       </div>
       <p class="splash-text">How you doin'!</p>
       <CustomButton text="Close" @click="closeSplashScreen">Close</CustomButton>
@@ -14,11 +14,11 @@
 
 <script setup lang="ts">
 import CustomButton from "~/src/components/CustomButton.vue";
-import type {Idea} from '~/src/types/types.vue';
+import type {IdeaType} from '~/src/types/types.vue';
 
 const props = defineProps<{
   showSplashScreen: boolean;
-  newlyCreatedIdea: Idea | null;
+  newlyCreatedIdea: IdeaType | null;
 }>();
 
 const emit = defineEmits<{

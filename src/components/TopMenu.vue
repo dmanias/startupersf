@@ -1,3 +1,17 @@
+<template>
+  <nav>
+    <nuxt-link class="home-link" to="/ideas">Home</nuxt-link>
+    <div class="logout-menu" v-if="authStore.token">
+      <div class="username-wrapper" @click="toggleLogoutMenu">
+        <span class="username">{{ username }}</span>
+      </div>
+      <div class="logout-wrapper" :class="{ 'show': showLogoutMenu }">
+        <button @click="logout">Logout</button>
+      </div>
+    </div>
+  </nav>
+</template>
+
 <script setup lang="ts">
 import { useAuthStore } from '~/src/store/auth';
 
@@ -38,20 +52,6 @@ onUnmounted(() => {
 });
 </script>
 
-<template>
-  <nav>
-    <nuxt-link class="home-link" to="/ideas">Home</nuxt-link>
-    <div class="logout-menu" v-if="authStore.token">
-      <div class="username-wrapper" @click="toggleLogoutMenu">
-        <span class="username">{{ username }}</span>
-        <div class="logout-wrapper" :class="{ 'show': showLogoutMenu }">
-          <button @click="logout">Logout</button>
-        </div>
-      </div>
-    </div>
-  </nav>
-</template>
-
 <style scoped>
 nav {
   display: flex;
@@ -61,6 +61,8 @@ nav {
   background-color: var(--shadow-color);
   font-weight: bold;
   color: var(--pencil-line-color);
+  position: relative;
+  z-index: 1000;
 }
 
 .home-link {
@@ -72,10 +74,10 @@ nav {
 
 .logout-menu {
   position: relative;
+  z-index: 1000;
 }
 
 .username-wrapper {
-  position: relative;
   cursor: pointer;
 }
 
@@ -94,6 +96,7 @@ nav {
   padding: 0.5em;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   border: 2px dashed var(--shadow-color);
+  z-index: 1000;
 }
 
 .logout-wrapper.show {

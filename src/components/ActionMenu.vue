@@ -7,17 +7,20 @@
 </template>
 
 <script setup lang="ts">
+import { useRouter } from 'vue-router';
+
 const props = defineProps<{
   ideaId: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'show-idea', ideaId: string): void;
   (e: 'open-delete-confirmation', ideaId: string): void;
 }>();
 
+const router = useRouter();
+
 function showIdea() {
-  emit('show-idea', props.ideaId);
+  router.push({ path: `/ideas/${props.ideaId}` });
 }
 
 function openDeleteConfirmation() {

@@ -10,7 +10,6 @@ import { useRouter } from 'nuxt/app';
 
 const router = useRouter();
 const emit = defineEmits(['login', 'switchToRegister']);
-
 const authStore = useAuthStore();
 const config = useRuntimeConfig();
 const backUrl = config.public.BACKEND_URL;
@@ -20,72 +19,95 @@ const schema = object({
   password: string().min(8, 'Must be at least 8 characters').required('Required'),
 });
 
+
+function switchToRegister() {
+  emit('switchToRegister');
+}
+
 type Schema = InferType<typeof schema>;
 
 const state = reactive({
-  email: undefined,
-  password: undefined,
+  email: '',
+  password: '',
 });
 
 const showPassword = ref(false);
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   await authStore.login({ email: state.email, password: state.password }, backUrl);
-  emit('login');
-  await router.push('/ideas');
+  if (!authStore.loginError) {
+    emit('login');
+    await router.push('/ideas');
+  } else {
+    setTimeout(() => {
+      router.push('/');
+    }, 5000);
+  }
+}
+
+function redirectToLogin() {
+  console.log('Redirecting to login...');
+  router.go(0);
 }
 
 function togglePasswordVisibility() {
   showPassword.value = !showPassword.value;
-}
-
-function switchToRegister() {
-  emit('switchToRegister');
 }
 </script>
 
 <template>
   <AuthWrapper>
     <h2 class="auth-title">Welcome</h2>
-    <UForm :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
-      <UFormGroup name="email" class="form-group">
-        <template #label>
-          <label class="block font-medium text-custom-label">Email</label>
-        </template>
-        <template #default>
-          <UInput v-model="state.email" class="custom-input" />
-        </template>
-      </UFormGroup>
-      <UFormGroup class="form-group password-form-group" name="password">
-        <template #label>
-          <label class="block font-medium text-custom-label">Password</label>
-        </template>
-        <template #default>
-          <div class="password-input-container">
-            <UInput v-model="state.password" :type="showPassword ? 'text' : 'password'" class="custom-input" />
-            <button type="button" class="password-toggle-btn" @click="togglePasswordVisibility">
-              <Icon v-if="showPassword" name="mdi:eye" />
-              <Icon v-else name="mdi:eye-off" />
-            </button>
-          </div>
-        </template>
-      </UFormGroup>
-      <CustomButton text="Login" type="submit">Login</CustomButton>
-      <div class="register-text-container">
-        <span class="register-text">Don't have an account? </span>
-        <a href="#" class="register-link" @click.prevent="switchToRegister">Register</a>
-      </div>
-    </UForm>
+    <div v-if="!authStore.loginError">
+      <!-- Login form -->
+      <UForm :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
+        <UFormGroup name="email" class="form-group">
+          <template #label>
+            <label class="block font-medium text-custom-label">Email</label>
+          </template>
+          <template #default>
+            <UInput v-model="state.email" class="custom-input" />
+          </template>
+        </UFormGroup>
+        <UFormGroup class="form-group password-form-group" name="password">
+          <template #label>
+            <label class="block font-medium text-custom-label">Password</label>
+          </template>
+          <template #default>
+            <div class="password-input-container">
+              <UInput v-model="state.password" :type="showPassword ? 'text' : 'password'" class="custom-input" />
+              <button type="button" class="password-toggle-btn" @click="togglePasswordVisibility">
+                <Icon v-if="showPassword" name="mdi:eye" />
+                <Icon v-else name="mdi:eye-off" />
+              </button>
+            </div>
+          </template>
+        </UFormGroup>
+        <CustomButton text="Login" type="submit">Login</CustomButton>
+        <div class="register-text-container">
+          <span class="register-text">Don't have an account? </span>
+          <a href="#" class="register-link" @click.prevent="switchToRegister">Register</a>
+        </div>
+      </UForm>
+    </div>
+    <div v-else class="error-message">
+      <span>{{ authStore.loginError }}</span>
+      <p class="redirect-text" @click="redirectToLogin">Back to Login</p>
+    </div>
   </AuthWrapper>
 </template>
 
 <style scoped>
+.auth-form ::v-deep .custom-input input {
+  background-color: var(--grey-input) !important;
+}
+
 .auth-title {
   margin-bottom: 20px;
   font-size: 24px;
   font-weight: bold;
   color: var(--pencil-line-color);
-  text-align: center
+  text-align: center;
 }
 
 .auth-form {
@@ -95,7 +117,7 @@ function switchToRegister() {
 }
 
 .auth-form .form-group label {
-  color:  var(--pencil-line-color);
+  color: var(--pencil-line-color);
 }
 
 .password-input-container {
@@ -122,5 +144,29 @@ function switchToRegister() {
   margin-top: 20px;
   color: var(--pencil-line-color);
   font-weight: bold;
+}
+
+.error-message {
+  color: red;
+  margin-top: 20px;
+  text-align: center;
+}
+
+.error-message span {
+  display: inline-block;
+  padding: 10px;
+  background-color: rgba(255, 0, 0, 0.1);
+  border-radius: 4px;
+}
+
+.redirect-text {
+  margin-top: 20px;
+  color: var(--pencil-line-color);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.redirect-text:hover {
+  color: var(--tree-color);
 }
 </style>

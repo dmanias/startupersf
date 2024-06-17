@@ -1,36 +1,65 @@
 <!-- pages/ideas/index.vue -->
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import {computed, onMounted, ref} from 'vue';
+import {useRouter} from 'vue-router';
 import CustomButton from '~/src/components/CustomButton.vue';
-import { useAuthStore } from '~/src/store/auth';
+import {useAuthStore} from '~/src/store/auth';
 import 'vue-select/dist/vue-select.css';
 import SplashScreen from "~/src/components/SplashScreen.vue";
-import type { Idea } from '~/src/types/types.vue';
+import type {DecodedTokenType, IdeaType, NewIdeaType} from '~/src/types/types.vue';
 import ConfirmationAlert from "~/src/components/ConfirmationAlert.vue";
-import SuccessAlert from "~/src/components/SuccessAlert.vue";
-import vSelect from 'vue-select';
+// import vSelect from 'vue-select';
 import SearchBar from '~/src/components/SearchBar.vue';
-import IdeasList from '~/src/components/IdeasList.vue';
+import IdeasList from '~/src/components/ideas/IdeasList.vue';
 import NewIdeaModal from '~/src/components/NewIdeaModal.vue';
+import SimpleAlert from "~/src/components/SimpleAlert.vue";
 
+// import { useCookie } from 'nuxt/app';
+// import { jwtDecode } from 'jwt-decode';
+
+const errorMessage = ref('');
 const searchQuery = ref('');
-const showSuccessAlert = ref(false);
+const showSimpleAlert = ref(false);
 const showDeleteConfirmation = ref(false);
 const ideaToDelete = ref<string | null>(null);
 const isLoading = ref(false);
 const showSplashScreen = ref(false);
-const newlyCreatedIdea = ref<Idea | null>(null);
+const newlyCreatedIdea = ref<IdeaType | null>(null);
 const authStore = useAuthStore();
 const router = useRouter();
-const ideas = ref<Idea[]>([]);
+const ideas = ref<IdeaType[]>([]);
 const config = useRuntimeConfig();
 const backUrl = config.public.BACKEND_URL;
 const existingTags = ref<string[]>([]);
 const showModal = ref(false);
-
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
+
+definePageMeta({
+  middleware: 'auth',
+});
+// Check if the authentication state is empty in the store
+// if (!authStore.token || !authStore.username || !authStore.user_id) {
+//   // If empty, try to retrieve the token from the cookie
+//   const tokenCookie = useCookie('token');
+//   const token = tokenCookie.value;
+//
+//   if (token) {
+//     // If the token exists in the cookie, decode it and update the store
+//     const decodedToken = jwtDecode(token) as DecodedTokenType;
+//     authStore.token = token;
+//     authStore.user_id = decodedToken.sub;
+//     authStore.username = decodedToken.userName;
+//   } else {
+//     // If the token doesn't exist in the cookie, logout the user
+//     authStore.logout();
+//     await router.push('/');
+//   }
+// }
+
+const totalIdeas = computed(() => {
+  return filteredIdeas.value.length;
+});
 
 const filteredIdeas = computed(() => {
   return ideas.value.filter((idea) =>
@@ -57,23 +86,26 @@ async function fetchIdeas() {
       Authorization: `Bearer ${token}`,
     };
 
-    const response = await fetch(`${backUrl}/${authStore.user_id}/ideas?order=date_created:desc`, { headers });
+    const response = await fetch(`${backUrl}/${authStore.user_id}/ideas?orderBy=datecreated,DESC`, {headers});
     if (response.ok) {
       const data = await response.json();
       ideas.value = data.items;
     } else {
+      const data = await response.json();
       console.error('HTTP error', response.status);
+      errorMessage.value = data.error;
     }
     const tagsResponse = await fetch(`${backUrl}/tags`, { headers });
     if (tagsResponse.ok) {
       const tagsData = await tagsResponse.json();
-      existingTags.value = tagsData;
+      existingTags.value = tagsData || []; // Assign an empty array if tagsData is null or undefined
       console.log(tagsData);
     } else {
       console.error('HTTP error', tagsResponse.status);
     }
   } catch (error) {
     console.error('Fetch error:', error);
+    errorMessage.value = 'Failed to fetch ideas. Please try again later.';
   }
 }
 
@@ -81,7 +113,8 @@ function toggleModal() {
   showModal.value = !showModal.value;
 }
 
-async function createNewIdea(newIdeaData: any) {
+async function createNewIdea(newIdeaData: NewIdeaType) {
+  console.log('Received newIdeaData:', newIdeaData);
   try {
     isLoading.value = true;
     const token = authStore.token;
@@ -94,39 +127,40 @@ async function createNewIdea(newIdeaData: any) {
       ...newIdeaData,
       userID: authStore.user_id,
       stage: 'Birth',
-      tags: Array.isArray(newIdeaData.tags) ? newIdeaData.tags.map((tag: string) => tag.toLowerCase()) : [],
+      tags: newIdeaData.tags,
+      inspiration: newIdeaData.inspiration,
     };
 
-    console.log(ideaData);
+    console.log('ideaData:', ideaData);
     const response = await fetch(`${backUrl}/ideas`, {
       method: 'POST',
       headers,
       body: JSON.stringify(ideaData),
     });
-
+console.log('response');
     if (response.ok) {
       toggleModal();
       newlyCreatedIdea.value = await response.json();
+      console.log('Idea created successfully', newlyCreatedIdea.value);
       showSplashScreen.value = true;
       await fetchIdeas();
       isLoading.value = false;
     } else {
       console.error('HTTP error', response.status);
       isLoading.value = false;
+      const data = await response.json();
+      errorMessage.value = data.error;
     }
   } catch (error) {
     console.error('Fetch error:', error);
     isLoading.value = false;
+    errorMessage.value = 'Failed to create a new idea. Please try again later.';
   }
 }
 
 onMounted(() => {
   fetchIdeas();
 });
-
-function closeSuccessAlert() {
-  showSuccessAlert.value = false;
-}
 
 async function deleteIdea(ideaId: string) {
   try {
@@ -143,12 +177,21 @@ async function deleteIdea(ideaId: string) {
 
     if (response.ok) {
       await fetchIdeas();
+      showSimpleAlert.value = true;
     } else {
       console.error('HTTP error', response.status);
+      const data = await response.json();
+      errorMessage.value = data.error;
     }
   } catch (error) {
     console.error('Fetch error:', error);
+    errorMessage.value = 'Failed to delete idea. Please try again later.';
   }
+}
+
+function closeAlert() {
+  showSimpleAlert.value = false;
+  errorMessage.value = '';
 }
 
 function openDeleteConfirmation(ideaId: string) {
@@ -165,7 +208,6 @@ async function confirmDelete() {
   if (ideaToDelete.value) {
     await deleteIdea(ideaToDelete.value);
     closeDeleteConfirmation();
-    showSuccessAlert.value = true;
   }
 }
 </script>
@@ -174,11 +216,12 @@ async function confirmDelete() {
   <div class="page-container">
     <div class="ideas-list-container">
       <h2 class="ideas-list-title">Brilliant Ideas</h2>
-      <SearchBar @search="searchQuery = $event" />
+      <SearchBar @search="searchQuery = $event"/>
       <IdeasList
           :ideas="paginatedIdeas"
           :items-per-page="itemsPerPage"
           :current-page="currentPage"
+          :total-items="totalIdeas"
           @update:items-per-page="itemsPerPage = $event"
           @update:current-page="currentPage = $event"
           @open-delete-confirmation="openDeleteConfirmation"
@@ -209,7 +252,8 @@ async function confirmDelete() {
         @confirm="confirmDelete"
         @cancel="closeDeleteConfirmation"
     />
-    <SuccessAlert v-if="showSuccessAlert" message="Murdered :)" @close="closeSuccessAlert" />
+    <SimpleAlert v-if="errorMessage" :message="errorMessage" @close="closeAlert"/>
+    <SimpleAlert v-if="showSimpleAlert" message="Murdered :)" @close="closeAlert"/>
   </div>
 </template>
 
@@ -217,6 +261,8 @@ async function confirmDelete() {
 .page-container {
   background-color: var(--background-color);
   min-height: 100vh;
+  position: relative;
+  z-index: 1;
 }
 
 .ideas-list-container {

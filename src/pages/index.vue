@@ -1,22 +1,27 @@
 <!-- index.vue -->
+<!-- index.vue -->
 <script setup lang="ts">
 import { ref } from 'vue';
 import Login from "~/src/components/Login.vue";
 import Register from "~/src/components/Register.vue";
-import { defineEmits } from 'vue';
 
-const emit = defineEmits(['update:isLoggedIn']);
+definePageMeta({
+  middleware: 'auth',
+});
 
 const isLoggedIn = ref(false);
 const showRegisterForm = ref(false);
 
 function handleLogin() {
   isLoggedIn.value = true;
-  emit('update:isLoggedIn', true);
 }
 
 function handleSwitchToRegister() {
   showRegisterForm.value = true;
+}
+
+function handleRegistrationError() {
+  showRegisterForm.value = false;
 }
 
 function handleSwitchToLogin() {
@@ -25,13 +30,13 @@ function handleSwitchToLogin() {
 </script>
 
 <template>
-  <div class="background" v-if="!isLoggedIn && (!showRegisterForm || showRegisterForm)">
+  <div class="background" v-if="!isLoggedIn && (!showRegisterForm || showRegisterForm) && $route.path === '/'">
     <img src="~/public/sprite2.png" alt="Logo" class="logo" />
     <div class="container">
       <div class="content">
         <div class="motto">The place where your ideas live</div>
         <Login v-if="!isLoggedIn && !showRegisterForm" @login="handleLogin" @switchToRegister="handleSwitchToRegister" />
-        <Register v-if="!isLoggedIn && showRegisterForm" @switchToLogin="handleSwitchToLogin" />
+        <Register v-if="!isLoggedIn && showRegisterForm" @switchToLogin="handleSwitchToLogin" @registration-error="handleRegistrationError" />
       </div>
     </div>
   </div>
@@ -88,5 +93,4 @@ function handleSwitchToLogin() {
     max-width: 100%;
   }
 }
-
 </style>

@@ -16,11 +16,10 @@
           <label for="tags">Tags:</label>
           <v-select
               id="tags"
-              :value="newIdea.tags"
+              v-model="newIdea.tags"
               :options="existingTags"
               :multiple="true"
               :taggable="true"
-              @input="handleTagInput"
               @search="handleTagSearch"
               placeholder="Select or create tags"
               class="form-input tags-select"
@@ -56,25 +55,39 @@
 import { ref } from 'vue';
 import CustomButton from '~/src/components/CustomButton.vue';
 import vSelect from 'vue-select';
+import type {NewIdeaType} from '~/src/types/types.vue';
 
-const props = defineProps<{
-  showModal: boolean;
-  existingTags: string[];
-}>();
+const props = defineProps({
+  showModal: {
+    type: Boolean,
+    required: true,
+  },
+  existingTags: {
+    type: Array as () => string[],
+    default: () => [],
+  },
+});
 
 const emit = defineEmits(['close', 'create', 'update:existingTags']);
 
 const showOptionalInputs = ref(false);
-const newIdea = ref({
+const newIdea = ref<NewIdeaType>({
   title: '',
   description: '',
-  tags: [] as string[],
+  tags: [],
   privacy: 'public',
   inspiration: '',
 });
 
-function handleTagInput(selectedTags: string[]) {
-  newIdea.value.tags = selectedTags;
+function handleTagInput(selectedTags: any[]) {
+  console.log('Selected tags0:', selectedTags);
+  if (Array.isArray(selectedTags)) {
+    newIdea.value.tags = selectedTags.map((tag) => (typeof tag === 'object' ? tag.label : tag));
+    console.log('Selected tags1:', newIdea.value.tags);
+  } else {
+    newIdea.value.tags = [];
+  }
+  console.log('Selected tags2:', newIdea.value.tags);
 }
 
 function handleTagSearch(newTag: string) {
@@ -88,7 +101,9 @@ function toggleOptionalInputs() {
 }
 
 function createNewIdea() {
-  emit('create', newIdea.value);
+  console.log('New idea before emit:', newIdea.value);
+  emit('create', { ...newIdea.value });
+  // Reset the newIdea object
   newIdea.value = {
     title: '',
     description: '',
@@ -100,6 +115,15 @@ function createNewIdea() {
 </script>
 
 <style scoped>
+
+.tags-select ::v-deep .vs__dropdown-menu {
+  background-color: var(--background-color);
+}
+
+.tags-select ::v-deep .vs__dropdown-option:hover {
+  background-color: var(--tree-color);
+}
+
 .modal-overlay {
   position: fixed;
   top: 0;
