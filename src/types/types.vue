@@ -22,6 +22,7 @@ export interface JourneyStep extends Step {
   id?: string;
   photoURL?: string;
   isEditing: boolean;
+  isAIHelpLoading: boolean;
 }
 
 export interface NewIdeaType {

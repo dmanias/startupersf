@@ -1,0 +1,30 @@
+<template>
+  <div>
+    <button v-if="!loggedIn" @click="loginWithGoogle">Login with Google</button>
+    <button v-else @click="logout">Logout</button>
+  </div>
+</template>
+
+<script setup lang="ts">
+
+import { useAuth } from '@sidebase/nuxt-auth'
+
+const auth = useAuth()
+const loggedIn = auth.loggedIn
+
+const loginWithGoogle = async () => {
+  try {
+    await auth.loginWith('google')
+  } catch (err) {
+    console.error(err)
+  }
+}
+
+const logout = async () => {
+  try {
+    await auth.logout()
+  } catch (err) {
+    console.error(err)
+  }
+}
+</script>

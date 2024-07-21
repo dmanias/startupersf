@@ -13,7 +13,7 @@
       </div>
       <div v-for="idea in ideas" :key="idea.id" class="idea-item">
         <div class="idea-field avatar-field" @click="showIdea(idea.id)">
-          <img v-if="idea.avatarURL" :src="idea.avatarURL" alt="Avatar" class="idea-avatar" />
+          <img v-if="idea.avatarURL" :src="`${backUrl}/${idea.avatarURL}`" alt="Avatar" class="idea-avatar" />
           <div v-else class="idea-avatar-placeholder"></div>
         </div>
         <div class="idea-field title-field" @click="showIdea(idea.id)">
@@ -58,6 +58,8 @@ import ActionMenu from '~/src/components/ActionMenu.vue';
 import { format } from 'date-fns';
 import Pagination from '~/src/components/Pagination.vue';
 
+const config = useRuntimeConfig();
+const backUrl = config.public.BACKEND_URL;
 const props = defineProps<{
   ideas: IdeaType[];
   itemsPerPage: number;

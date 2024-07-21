@@ -30,6 +30,36 @@ const posts = ref<PostType[]>([]);
 const selectedTab = ref('myWall');
 const journeyId = ref('');
 
+
+async function getAIHelp(step: JourneyStep, index: number) {
+  try {
+    const token = authStore.token;
+    const headers = {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    };
+    journey.value[index].isAIHelpLoading = true;
+    const questionType = 'step';
+    const response = await fetch(`${backUrl}/ask/${ideaId}/${questionType}/${step.description}`, { headers });
+    if (response.ok) {
+      const data = await response.json();
+      const aiResponse = data.ai_response;
+      step.answer = aiResponse;
+    } else {
+      console.error('HTTP error', response.status);
+      errorMessage.value = 'Failed to fetch AI help. Please try again later.';
+      showSimpleAlert.value = true;
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+    errorMessage.value = 'An error occurred while fetching AI help. Please try again later.';
+    showSimpleAlert.value = true;
+  } finally {
+    journey.value[index].isAIHelpLoading = false;
+  }
+}
+
+
 async function deleteJourney() {
   if (journeyId.value) {
     try {
@@ -363,6 +393,7 @@ async function fetchModeratorInstructions() {
               ...step,
               answer: '',
               isEditing: false,
+              isAIHelpLoading: false,
             }));
             await fetchJourneyData();
             // Store the moderator ID in the reactive variable
@@ -398,9 +429,10 @@ onMounted(() => {
 </script>
 
 <template>
+  <div class="page-container">
   <div v-if="idea" class="idea-details-container">
     <div class="idea-profile">
-      <img v-if="idea.avatarURL" :src="idea.avatarURL" alt="Avatar" class="idea-avatar" />
+      <img v-if="idea.avatarURL" :src="`${backUrl}/${idea.avatarURL}`" alt="Avatar" class="idea-avatar" />
       <div v-else class="idea-avatar-placeholder"></div>
       <h2 class="idea-title">{{ idea.title }}</h2>
     </div>
@@ -443,19 +475,81 @@ onMounted(() => {
         />
         <Journey
             v-if="selectedTab === 'journey'"
-            :journey-steps="journey"
-            @submit-journey="submitJourney"
-            @delete-journey="deleteJourney"
+            :journeySteps="journey"
+            @submitJourney="submitJourney"
+            @deleteJourney="deleteJourney"
+            @getAIHelp="(step) => getAIHelp(step, journey.indexOf(step))"
         />
       </div>
     </div>
     <SimpleAlert v-if="errorMessage" :message="errorMessage" @close="closeAlert"/>
   </div>
+  </div>
 </template>
 
 <style scoped>
+.page-container {
+  background-color: var(--background-color);
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.idea-details-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: var(--pencil-line-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  border: 2px solid var(--shadow-color);
+}
+
+.idea-profile {
+  background-color: var(--pencil-line-color);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  border-bottom: 4px solid var(--building-color);
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.idea-avatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  margin-right: 20px;
+  background-color: var(--pencil-line-color);
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.idea-avatar-placeholder {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background-color: var(--pencil-line-color);
+  margin-right: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+.idea-title {
+  color: white;
+  font-size: 24px;
+  margin: 0;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.idea-about {
+  padding: 20px;
+  background-color: var(--pencil-line-color);
+  color: white;
+}
+
 .tab-container {
   position: relative;
+  background-color: var(--pencil-line-color);
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .tab-navigation {
@@ -495,7 +589,8 @@ onMounted(() => {
   padding: 20px;
   background-color: var(--pencil-line-color);
   border: 4px solid var(--shadow-color);
-  border-radius: 8px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 @keyframes spin {
@@ -512,31 +607,6 @@ onMounted(() => {
   margin: 0 auto;
   padding: 20px;
   background-color: var(--background-color);
-}
-
-.idea-profile {
-  display: flex;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.idea-avatar {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  margin-right: 20px;
-}
-
-.idea-avatar-placeholder {
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background-color: var(--shadow-color);
-  margin-right: 20px;
-}
-
-.idea-about {
-  margin-bottom: 10px;
 }
 
 .about-row {
@@ -560,7 +630,7 @@ onMounted(() => {
 .idea-board h3 {
   font-size: 18px;
   font-weight: bold;
-  color: var(--shadow-color);
+  color:  white;
   margin-bottom: 10px;
 }
 

@@ -10,30 +10,35 @@ const emit = defineEmits(['switchToLogin', 'registration-error']);
 const router = useRouter();
 const registrationSuccessful = ref(false);
 const schema = object({
-  name: string().required('Required'),
-  email: string().email('Invalid email').required('Required'),
-  password: string().min(8, 'Must be at least 8 characters').required('Required'),
-  passwordConfirm: string().oneOf([yupRef('password')], 'Passwords must match').required('Required'),
+  name: string().required('Name is required'),
+  email: string().email('Invalid email').required('Email is required'),
+  password: string().min(8, 'Password must be at least 8 characters').required('Password is required'),
+  passwordConfirm: string().oneOf([yupRef('password')], 'Passwords must match').required('Password confirmation is required'),
 });
 
 type Schema = InferType<typeof schema>;
 
 const state = reactive({
-  name: undefined,
-  email: undefined,
-  password: undefined,
-  passwordConfirm: undefined,
+  name: '',
+  email: '',
+  password: '',
+  passwordConfirm: '',
 });
 
 const config = useRuntimeConfig();
 const backUrl = config.public.BACKEND_URL;
-
-const showAlert = ref(false);
-const alertMessage = ref('');
+const host = config.public.HOST;
+const errorMessage = ref('');
+const successMessage = ref('');
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
+const isSubmitting = ref(false);
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
+  errorMessage.value = '';
+  registrationSuccessful.value = false;
+  isSubmitting.value = true;
+
   const body = JSON.stringify({
     Name: state.name,
     Email: state.email,
@@ -51,40 +56,36 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       body: body,
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
       console.error('HTTP error', response.status);
-      showAlert.value = true;
-      const errorData = await response.json();
-      registrationSuccessful.value = false;
-      alertMessage.value = `Registration failed: ${errorData.error || response.statusText}`;
-      setTimeout(() => {
-        router.push('/');
-      }, 2000);
+      if (data.error) {
+        errorMessage.value = `Registration failed: ${data.error}`;
+      } else {
+        errorMessage.value = `Registration failed: ${response.statusText}`;
+      }
+      emit('registration-error');
     } else {
-      const data = await response.json();
-      console.log(data);
-
       if (!data || Object.keys(data).length === 0) {
         console.error('No data received');
-        showAlert.value = true;
-        alertMessage.value = 'Registration failed: No data received';
+        errorMessage.value = 'Registration failed: No data received from server';
+        emit('registration-error');
       } else {
-        showAlert.value = true;
-        alertMessage.value = 'Registration successful!';
+        registrationSuccessful.value = true;
+        successMessage.value = 'Registration successful! You can now log in.';
+        setTimeout(() => {
+          switchToLogin();
+        }, 3000);
       }
-      registrationSuccessful.value = true;
     }
   } catch (error) {
     console.error('Fetch error:', error);
-    showAlert.value = true;
-    alertMessage.value = 'Registration failed: Fetch error';
+    errorMessage.value = 'Registration failed: Unable to connect to the server. Please try again later.';
     emit('registration-error');
+  } finally {
+    isSubmitting.value = false;
   }
-}
-
-function redirectToRegistration() {
-  console.log('Redirecting to login...');
-  emit('switchToLogin');
 }
 
 function togglePasswordVisibility() {
@@ -103,8 +104,7 @@ function switchToLogin() {
 <template>
   <AuthWrapper>
     <h2 class="auth-title">Register</h2>
-    <div v-if="!showAlert">
-    <UForm :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
+    <UForm v-if="!registrationSuccessful" :schema="schema" :state="state" class="auth-form space-y-4" @submit="onSubmit">
       <UFormGroup name="name" class="form-group">
         <label class="block font-medium text-custom-label">Name</label>
         <UInput v-model="state.name" class="custom-input" />
@@ -133,21 +133,20 @@ function switchToLogin() {
           </button>
         </div>
       </UFormGroup>
-      <CustomButton text="Register" type="submit">Register</CustomButton>
+      <CustomButton text="Register" type="submit" :disabled="isSubmitting">
+        {{ isSubmitting ? 'Registering...' : 'Register' }}
+      </CustomButton>
       <div class="login-text-container">
         <span class="login-text">Already have an account? </span>
         <a href="#" class="login-link" @click.prevent="switchToLogin">Login</a>
       </div>
     </UForm>
-    <UAlert v-if="showAlert" :description="alertMessage" title="Registration" />
+    <div v-if="errorMessage" :class="{ 'error-message': !registrationSuccessful, 'success-message': registrationSuccessful }">
+      {{ errorMessage }}
     </div>
-    <div v-else>
-      <span :class="{ 'error-message': !registrationSuccessful, 'success-message': registrationSuccessful }">
-        {{ alertMessage }}
-      </span>
-      <p class="redirect-text text-center" @click="redirectToRegistration">
-        {{ registrationSuccessful ? 'Back to Login' : 'Back to Register' }}
-      </p>
+    <div v-if="registrationSuccessful" class="success-message">
+      <p>{{ successMessage }}</p>
+      <p>Redirecting to login...</p>
     </div>
   </AuthWrapper>
 </template>

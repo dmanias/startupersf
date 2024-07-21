@@ -1,0 +1,12 @@
+<template>
+  <div>
+    <!-- Global components like navbars or sidebars -->
+    <Nuxt />  <!-- This component renders the page components -->
+  </div>
+</template>
+
+<script>
+export default {
+  // Script logic here
+}
+</script>

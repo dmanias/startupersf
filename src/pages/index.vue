@@ -1,5 +1,4 @@
 <!-- index.vue -->
-<!-- index.vue -->
 <script setup lang="ts">
 import { ref } from 'vue';
 import Login from "~/src/components/Login.vue";
@@ -21,7 +20,8 @@ function handleSwitchToRegister() {
 }
 
 function handleRegistrationError() {
-  showRegisterForm.value = false;
+  // Do nothing here, or you can add some logging if needed
+  console.log('Registration error occurred');
 }
 
 function handleSwitchToLogin() {
@@ -30,13 +30,13 @@ function handleSwitchToLogin() {
 </script>
 
 <template>
-  <div class="background" v-if="!isLoggedIn && (!showRegisterForm || showRegisterForm) && $route.path === '/'">
+  <div class="background" v-if="!isLoggedIn && $route.path === '/'">
     <img src="~/public/sprite2.png" alt="Logo" class="logo" />
     <div class="container">
       <div class="content">
         <div class="motto">The place where your ideas live</div>
-        <Login v-if="!isLoggedIn && !showRegisterForm" @login="handleLogin" @switchToRegister="handleSwitchToRegister" />
-        <Register v-if="!isLoggedIn && showRegisterForm" @switchToLogin="handleSwitchToLogin" @registration-error="handleRegistrationError" />
+        <Login v-if="!showRegisterForm" @login="handleLogin" @switchToRegister="handleSwitchToRegister" />
+        <Register v-else @switchToLogin="handleSwitchToLogin" @registration-error="handleRegistrationError" />
       </div>
     </div>
   </div>

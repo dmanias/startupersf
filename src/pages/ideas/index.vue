@@ -38,24 +38,6 @@ const currentPage = ref(1);
 definePageMeta({
   middleware: 'auth',
 });
-// Check if the authentication state is empty in the store
-// if (!authStore.token || !authStore.username || !authStore.user_id) {
-//   // If empty, try to retrieve the token from the cookie
-//   const tokenCookie = useCookie('token');
-//   const token = tokenCookie.value;
-//
-//   if (token) {
-//     // If the token exists in the cookie, decode it and update the store
-//     const decodedToken = jwtDecode(token) as DecodedTokenType;
-//     authStore.token = token;
-//     authStore.user_id = decodedToken.sub;
-//     authStore.username = decodedToken.userName;
-//   } else {
-//     // If the token doesn't exist in the cookie, logout the user
-//     authStore.logout();
-//     await router.push('/');
-//   }
-// }
 
 const totalIdeas = computed(() => {
   return filteredIdeas.value.length;

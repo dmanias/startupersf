@@ -1,7 +1,6 @@
 <!-- components/MyWall.vue -->
 <template>
   <div>
-    <h3 class="mywall-heading">Idea's Board</h3>
     <div class="new-post">
       <textarea v-model="localNewPost" placeholder="Add a new post" :disabled="isIdeaPostLoading" @input="$emit('update:newPost', localNewPost)"></textarea>
       <div class="post-buttons">
@@ -56,12 +55,9 @@ function deletePost(postId: string) {
 </script>
 
 <style scoped>
-.mywall-heading{
-  margin-bottom: 10px;
-}
-
 .new-post {
   margin-bottom: 20px;
+  color: var(--shadow-color);
 }
 
 .new-post textarea {
@@ -71,6 +67,12 @@ function deletePost(postId: string) {
   border: 2px solid var(--shadow-color);
   border-radius: 5px;
   resize: vertical;
+  color: var(--pencil-line-color);
+  background-color: var(--shadow-color);
+}
+
+.new-post textarea::placeholder {
+  color: var(--pencil-line-color);
 }
 
 .post-buttons {
@@ -92,6 +94,7 @@ function deletePost(postId: string) {
 
 .idea-button {
   box-shadow: 0 0 10px rgba(0, 123, 255, 0.7);
+  font-style: italic;
 }
 
 .loading-spinner {

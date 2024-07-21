@@ -10,7 +10,9 @@ export interface AuthState {
     user_id: string | null;
     loginError: string | null;
 }
-
+const config = useRuntimeConfig();
+const host = config.public.HOST;
+console.log(host);
 export const useAuthStore = defineStore('auth', {
     state: (): AuthState => ({
         token: null,
@@ -19,11 +21,11 @@ export const useAuthStore = defineStore('auth', {
         loginError: null,
     }),
     actions: {
-        async login(credentials: { email: string; password: string }, backUrl: string) {
+        async login(credentials: { email: string; password: string }, backUrl: string){
             try {
-                const response = await fetch(`${backUrl}/users/login`, {
+                const response = await fetch(`${backUrl}/users/login`,{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json'},
                     body: JSON.stringify(credentials),
                 });
 
